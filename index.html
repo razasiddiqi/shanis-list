@@ -1,0 +1,1649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<title>Shani's List</title>
+
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0f2a19">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Shani's List">
+<link rel="apple-touch-icon" href="icon-192.png">
+
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  :root {
+    --bg: #ffffff;
+    --bg-soft: #f4f9f5;
+    --bg-tint: #e8f3ec;
+    --green: #1e7a3e;
+    --green-bright: #27a352;
+    --green-dim: rgba(30,122,62,0.08);
+    --ink: #0f2a19;
+    --text: #1a3d26;
+    --text-muted: #5a8a6a;
+    --text-faint: #8aac95;
+    --amber: #d97706;
+    --amber-dim: rgba(217,119,6,0.1);
+    --red: #dc2626;
+    --red-dim: rgba(220,38,38,0.08);
+    --border: rgba(30,122,62,0.12);
+    --border-strong: rgba(30,122,62,0.22);
+    --safe-top: env(safe-area-inset-top);
+    --safe-bot: env(safe-area-inset-bottom);
+  }
+
+  html, body { height: 100%; overscroll-behavior-y: none; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg-soft);
+    color: var(--text);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+    padding-bottom: calc(72px + var(--safe-bot));
+  }
+
+  /* ─── Top bar ─────────────────────────────────────────────────── */
+  .topbar {
+    background: var(--bg);
+    padding: calc(14px + var(--safe-top)) 18px 14px;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .brand {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    color: var(--ink);
+    letter-spacing: 0.01em;
+  }
+  .brand span { color: var(--green); font-style: italic; }
+
+  .agent-mode-pill {
+    display: none;
+    font-size: 10px;
+    font-weight: 600;
+    color: white;
+    background: var(--ink);
+    padding: 3px 8px;
+    border-radius: 100px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-left: 8px;
+    vertical-align: middle;
+  }
+  body.agent-mode .agent-mode-pill { display: inline-block; }
+
+  .topbar-icon {
+    width: 38px; height: 38px;
+    border-radius: 10px;
+    background: var(--bg-soft);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--ink);
+    border: none;
+    cursor: pointer;
+    position: relative;
+  }
+  .topbar-icon .badge-dot {
+    position: absolute;
+    top: 8px; right: 9px;
+    width: 8px; height: 8px;
+    background: var(--amber);
+    border: 2px solid var(--bg);
+    border-radius: 50%;
+  }
+
+  /* ─── Greeting + filter pills ─────────────────────────────────── */
+  .greeting { padding: 18px 18px 8px; }
+  .greeting h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 26px;
+    font-weight: 400;
+    color: var(--ink);
+    line-height: 1.15;
+    margin-bottom: 4px;
+  }
+  .greeting h1 em { color: var(--green); font-style: italic; }
+  .greeting p { font-size: 13px; color: var(--text-muted); font-weight: 300; }
+
+  .filter-bar {
+    padding: 14px 18px 12px;
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .filter-bar::-webkit-scrollbar { display: none; }
+  .pill {
+    flex-shrink: 0;
+    padding: 7px 14px;
+    border-radius: 100px;
+    font-size: 12.5px;
+    font-weight: 500;
+    background: var(--bg);
+    color: var(--text);
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: inherit;
+  }
+  .pill.active { background: var(--ink); color: white; border-color: var(--ink); }
+  .pill .count { font-size: 10.5px; opacity: 0.7; margin-left: 4px; }
+
+  /* ─── Agent action bar ────────────────────────────────────────── */
+  .agent-action-bar {
+    display: none;
+    padding: 8px 18px 14px;
+  }
+  body.agent-mode .agent-action-bar { display: block; }
+  .agent-action-bar button {
+    width: 100%;
+    background: var(--ink);
+    color: white;
+    border: none;
+    padding: 14px;
+    border-radius: 12px;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .agent-action-bar button:active { transform: scale(0.98); }
+
+  /* ─── Property feed ───────────────────────────────────────────── */
+  .feed {
+    padding: 4px 14px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .deal-card {
+    background: var(--bg);
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 1px 2px rgba(15,42,25,0.04), 0 4px 12px rgba(15,42,25,0.04);
+    cursor: pointer;
+    transition: transform 0.18s ease;
+    animation: cardIn 0.4s ease-out backwards;
+    position: relative;
+  }
+  .deal-card:active { transform: scale(0.98); }
+  @keyframes cardIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .card-image {
+    height: 180px;
+    background: linear-gradient(135deg, var(--bg-tint), var(--green-dim));
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .card-badge {
+    position: absolute;
+    top: 12px; left: 12px;
+    font-size: 10.5px;
+    font-weight: 600;
+    padding: 5px 11px;
+    border-radius: 100px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    backdrop-filter: blur(8px);
+  }
+  .badge-great { background: rgba(30,122,62,0.92); color: white; }
+  .badge-good { background: rgba(217,119,6,0.92); color: white; }
+  .badge-fair { background: rgba(220,38,38,0.92); color: white; }
+
+  .card-save {
+    position: absolute;
+    top: 12px; right: 12px;
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: blur(8px);
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--text-muted);
+    transition: color 0.15s;
+  }
+  .card-save.saved { color: var(--red); }
+  .card-save svg { width: 18px; height: 18px; }
+  .card-save.saved svg { fill: currentColor; }
+
+  /* Agent edit/delete buttons (only show in agent mode) */
+  .agent-controls {
+    display: none;
+    position: absolute;
+    bottom: 12px; right: 12px;
+    gap: 6px;
+  }
+  body.agent-mode .agent-controls { display: flex; }
+  .agent-control-btn {
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.95);
+    backdrop-filter: blur(8px);
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--ink);
+  }
+  .agent-control-btn.delete { color: var(--red); }
+  .agent-control-btn svg { width: 16px; height: 16px; }
+
+  .card-body { padding: 14px 16px 16px; }
+  .card-row-1 {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 6px;
+  }
+  .card-addr {
+    font-size: 16px;
+    color: var(--ink);
+    font-weight: 600;
+    line-height: 1.2;
+    flex: 1;
+    margin-right: 10px;
+  }
+  .card-price {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    color: var(--ink);
+    line-height: 1;
+    flex-shrink: 0;
+  }
+  .card-city { font-size: 12.5px; color: var(--text-muted); margin-bottom: 14px; }
+
+  /* All-in vs ARV bar */
+  .deal-bar { margin-bottom: 14px; }
+  .deal-bar-top {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11.5px;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+  }
+  .deal-bar-pct { font-weight: 600; }
+  .deal-bar-track {
+    height: 6px;
+    background: var(--bg-soft);
+    border-radius: 100px;
+    overflow: hidden;
+    position: relative;
+  }
+  .deal-bar-fill {
+    height: 100%;
+    border-radius: 100px;
+    transition: width 0.5s ease;
+  }
+  .deal-70 {
+    position: absolute;
+    left: 70%;
+    top: -2px; bottom: -2px;
+    width: 1.5px;
+    background: var(--ink);
+    opacity: 0.4;
+  }
+
+  /* Estimated return section with disclaimer */
+  .return-block {
+    background: var(--bg-soft);
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-bottom: 14px;
+    border: 1px solid var(--border);
+  }
+  .return-disclaimer {
+    font-size: 9.5px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .return-disclaimer::before {
+    content: "⚠";
+    color: var(--amber);
+    font-size: 11px;
+  }
+  .return-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .return-item .return-label {
+    font-size: 10.5px;
+    color: var(--text-muted);
+    margin-bottom: 2px;
+  }
+  .return-item .return-value {
+    font-size: 13px;
+    color: var(--ink);
+    font-weight: 600;
+  }
+  .return-value.tight { color: var(--amber); }
+  .return-value.negative { color: var(--red); }
+
+  /* Card actions */
+  .card-actions {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    gap: 8px;
+  }
+  .btn {
+    font-family: inherit;
+    font-weight: 500;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  .btn:active { transform: scale(0.96); }
+  .btn-primary { background: var(--ink); color: white; padding: 12px 16px; font-size: 14px; }
+  .btn-icon { background: var(--bg-soft); color: var(--ink); width: 44px; height: 44px; }
+  .btn-icon svg { width: 18px; height: 18px; }
+
+  /* ─── Bottom nav ──────────────────────────────────────────────── */
+  .bottom-nav {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: rgba(255,255,255,0.97);
+    backdrop-filter: blur(16px);
+    border-top: 1px solid var(--border);
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    padding: 8px 0 calc(6px + var(--safe-bot));
+    z-index: 40;
+  }
+  .nav-tab {
+    background: none;
+    border: none;
+    padding: 8px 4px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    cursor: pointer;
+    color: var(--text-faint);
+    font-family: inherit;
+    font-size: 10.5px;
+    transition: color 0.15s;
+  }
+  .nav-tab.active { color: var(--ink); }
+  .nav-tab svg { width: 22px; height: 22px; }
+
+  /* ─── Sheet (modal) ───────────────────────────────────────────── */
+  .sheet-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15,42,25,0.4);
+    backdrop-filter: blur(2px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s;
+    z-index: 100;
+  }
+  .sheet-overlay.open { opacity: 1; pointer-events: auto; }
+
+  .sheet {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: var(--bg);
+    border-radius: 20px 20px 0 0;
+    transform: translateY(100%);
+    transition: transform 0.32s cubic-bezier(0.32, 0.72, 0, 1);
+    z-index: 110;
+    max-height: 92vh;
+    overflow-y: auto;
+    padding-bottom: var(--safe-bot);
+    -webkit-overflow-scrolling: touch;
+  }
+  .sheet.open { transform: translateY(0); }
+
+  .sheet-handle {
+    width: 36px; height: 4px;
+    background: var(--border);
+    border-radius: 100px;
+    margin: 10px auto 4px;
+  }
+
+  .sheet-header {
+    padding: 12px 20px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .sheet-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    color: var(--ink);
+    margin-bottom: 2px;
+  }
+  .sheet-sub { font-size: 13px; color: var(--text-muted); }
+
+  .sheet-image {
+    height: 200px;
+    background: linear-gradient(135deg, var(--bg-tint), var(--green-dim));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .sheet-section {
+    padding: 18px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .sheet-section:last-child { border-bottom: none; }
+  .sheet-section-title {
+    font-size: 11px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .num-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    font-size: 14px;
+  }
+  .num-row .label { color: var(--text-muted); }
+  .num-row .val { color: var(--ink); font-weight: 500; }
+  .num-row .val.big {
+    font-family: 'Playfair Display', serif;
+    font-size: 18px;
+    font-weight: 400;
+  }
+
+  .objection {
+    background: var(--bg-soft);
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-bottom: 8px;
+  }
+  .objection-q { font-size: 12px; color: var(--text-muted); margin-bottom: 4px; font-weight: 500; }
+  .objection-a { font-size: 13.5px; color: var(--ink); line-height: 1.5; }
+
+  .full-disclaimer {
+    background: var(--amber-dim);
+    border: 1px solid rgba(217,119,6,0.2);
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin: 14px 20px;
+    font-size: 11.5px;
+    color: var(--text);
+    line-height: 1.5;
+  }
+  .full-disclaimer strong { color: var(--amber); display: block; margin-bottom: 4px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .sheet-cta {
+    padding: 16px 20px calc(20px + var(--safe-bot));
+    background: var(--bg);
+    border-top: 1px solid var(--border);
+    position: sticky;
+    bottom: 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .sheet-cta .btn-primary { padding: 14px; font-size: 15px; }
+  .sheet-cta .btn-secondary {
+    background: var(--bg-soft);
+    color: var(--ink);
+    padding: 14px;
+    font-size: 15px;
+  }
+
+  /* HMC button — full width, gold accent */
+  .hmc-btn {
+    width: calc(100% - 40px);
+    margin: 0 20px 14px;
+    background: linear-gradient(135deg, #b8860b, #d4af37);
+    color: white;
+    padding: 14px 18px;
+    border: none;
+    border-radius: 12px;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    box-shadow: 0 4px 14px rgba(184,134,11,0.25);
+  }
+  .hmc-btn:active { transform: scale(0.98); }
+  .hmc-btn svg { width: 18px; height: 18px; }
+
+  /* ─── Form modal (Add Property + HMC form) ───────────────────── */
+  .form-modal {
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    z-index: 200;
+    display: none;
+    flex-direction: column;
+    padding-top: var(--safe-top);
+    overflow-y: auto;
+  }
+  .form-modal.open { display: flex; }
+
+  .form-modal-header {
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--bg);
+    position: sticky;
+    top: 0;
+    z-index: 5;
+  }
+  .form-modal-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 20px;
+    color: var(--ink);
+  }
+  .form-modal-close {
+    background: var(--bg-soft);
+    border: none;
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    font-size: 22px;
+    cursor: pointer;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .form-body {
+    padding: 18px;
+    flex: 1;
+  }
+
+  .field { margin-bottom: 16px; }
+  .field label {
+    display: block;
+    font-size: 11px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 6px;
+    font-weight: 500;
+  }
+  .field input, .field textarea, .field select {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid var(--border-strong);
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 15px;
+    color: var(--ink);
+    background: var(--bg);
+    -webkit-appearance: none;
+  }
+  .field input:focus, .field textarea:focus, .field select:focus {
+    outline: none;
+    border-color: var(--green);
+    box-shadow: 0 0 0 3px var(--green-dim);
+  }
+  .field textarea { min-height: 80px; resize: vertical; }
+  .field-hint { font-size: 11.5px; color: var(--text-muted); margin-top: 6px; }
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  .preview-box {
+    background: var(--bg-soft);
+    border: 1px dashed var(--border-strong);
+    border-radius: 10px;
+    padding: 14px;
+    margin: 8px 0 16px;
+  }
+  .preview-label {
+    font-size: 10px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 8px;
+  }
+  .preview-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    padding: 4px 0;
+  }
+  .preview-row strong { color: var(--ink); font-weight: 600; }
+
+  .form-footer {
+    padding: 14px 18px calc(14px + var(--safe-bot));
+    border-top: 1px solid var(--border);
+    background: var(--bg);
+    position: sticky;
+    bottom: 0;
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 10px;
+  }
+  .form-footer .btn-primary { padding: 14px; font-size: 15px; }
+  .form-footer .btn-ghost {
+    background: var(--bg-soft);
+    color: var(--text);
+    padding: 14px;
+    font-size: 15px;
+  }
+
+  /* HMC info bar at top of form */
+  .hmc-info {
+    background: linear-gradient(135deg, #fef3c7, #fde68a);
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-bottom: 18px;
+    font-size: 12.5px;
+    color: #78350f;
+    line-height: 1.5;
+  }
+  .hmc-info strong { display: block; margin-bottom: 4px; font-weight: 600; }
+
+  /* ─── Agent login modal ───────────────────────────────────────── */
+  .login-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(15,42,25,0.7);
+    backdrop-filter: blur(8px);
+    z-index: 300;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .login-modal.open { display: flex; }
+  .login-card {
+    background: var(--bg);
+    border-radius: 16px;
+    padding: 28px 24px;
+    width: 100%;
+    max-width: 360px;
+    text-align: center;
+  }
+  .login-card h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    color: var(--ink);
+    margin-bottom: 6px;
+  }
+  .login-card p { font-size: 13px; color: var(--text-muted); margin-bottom: 18px; }
+  .login-card input {
+    width: 100%;
+    padding: 13px 16px;
+    border: 1px solid var(--border-strong);
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 16px;
+    text-align: center;
+    letter-spacing: 0.05em;
+    margin-bottom: 12px;
+  }
+  .login-card input:focus { outline: none; border-color: var(--green); }
+  .login-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .login-actions .btn { padding: 12px; font-size: 14px; }
+  .login-actions .btn-ghost {
+    background: var(--bg-soft);
+    color: var(--text);
+  }
+
+  /* ─── First-visit disclaimer ──────────────────────────────────── */
+  .welcome-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(15,42,25,0.7);
+    backdrop-filter: blur(8px);
+    z-index: 250;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .welcome-modal.open { display: flex; }
+  .welcome-card {
+    background: var(--bg);
+    border-radius: 16px;
+    padding: 28px 24px;
+    width: 100%;
+    max-width: 380px;
+  }
+  .welcome-card h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    color: var(--ink);
+    margin-bottom: 8px;
+  }
+  .welcome-card p {
+    font-size: 13.5px;
+    color: var(--text);
+    line-height: 1.6;
+    margin-bottom: 14px;
+  }
+  .welcome-card .legal {
+    background: var(--bg-soft);
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.5;
+    margin-bottom: 18px;
+  }
+  .welcome-card button {
+    width: 100%;
+    background: var(--ink);
+    color: white;
+    border: none;
+    padding: 13px;
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  /* ─── Toast ───────────────────────────────────────────────────── */
+  .toast {
+    position: fixed;
+    bottom: calc(86px + var(--safe-bot));
+    left: 50%;
+    transform: translateX(-50%) translateY(60px);
+    background: var(--ink);
+    color: white;
+    padding: 11px 18px;
+    border-radius: 100px;
+    font-size: 13px;
+    box-shadow: 0 10px 30px rgba(15,42,25,0.3);
+    opacity: 0;
+    transition: all 0.25s;
+    z-index: 400;
+    white-space: nowrap;
+    max-width: 90%;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* ─── Footer link for agent login ─────────────────────────────── */
+  .footer-link {
+    text-align: center;
+    padding: 30px 20px 10px;
+    font-size: 11px;
+    color: var(--text-faint);
+  }
+  .footer-link button {
+    background: none;
+    border: none;
+    color: var(--text-faint);
+    font-family: inherit;
+    font-size: 11px;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+</style>
+</head>
+<body>
+
+<!-- ─── Top bar ─── -->
+<header class="topbar">
+  <div class="brand">Shani's <span>List</span><span class="agent-mode-pill">Agent</span></div>
+  <button class="topbar-icon" aria-label="Notifications" onclick="showToast('3 new deals this week')">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+    <span class="badge-dot"></span>
+  </button>
+</header>
+
+<!-- ─── Greeting ─── -->
+<section class="greeting">
+  <h1 id="greeting-text">Good morning, <em>Mike</em></h1>
+  <p id="greeting-sub">5 off-market deals matched your criteria</p>
+</section>
+
+<!-- ─── Agent action bar (only visible in agent mode) ─── -->
+<div class="agent-action-bar">
+  <button onclick="openAddProperty()">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    Add a Property
+  </button>
+</div>
+
+<!-- ─── Filter pills ─── -->
+<div class="filter-bar" id="filters">
+  <button class="pill active" data-filter="all">All <span class="count" id="count-all">0</span></button>
+  <button class="pill" data-filter="great">Great <span class="count" id="count-great">0</span></button>
+  <button class="pill" data-filter="good">Good <span class="count" id="count-good">0</span></button>
+  <button class="pill" data-filter="saved">Saved <span class="count" id="count-saved">0</span></button>
+</div>
+
+<!-- ─── Feed ─── -->
+<main class="feed" id="feed"></main>
+
+<!-- ─── Footer link for agent login ─── -->
+<div class="footer-link">
+  <button onclick="toggleAgentMode()" id="agent-login-btn">Agent Login</button>
+</div>
+
+<!-- ─── Bottom nav ─── -->
+<nav class="bottom-nav">
+  <button class="nav-tab active">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    Deals
+  </button>
+  <button class="nav-tab" onclick="showToast('Map view coming soon')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
+    Map
+  </button>
+  <button class="nav-tab" onclick="setFilter('saved')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+    Saved
+  </button>
+  <button class="nav-tab" onclick="showToast('Profile · Pro Plan')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    Profile
+  </button>
+</nav>
+
+<!-- ─── Detail sheet ─── -->
+<div class="sheet-overlay" id="sheet-overlay" onclick="closeSheet()"></div>
+<aside class="sheet" id="sheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-image">
+    <svg width="64" height="64" viewBox="0 0 48 48" fill="none">
+      <rect x="6" y="20" width="36" height="22" rx="2" fill="#1e7a3e" opacity="0.3"/>
+      <polygon points="4,22 24,6 44,22" fill="#1e7a3e" opacity="0.3"/>
+    </svg>
+  </div>
+  <div id="sheet-content"></div>
+</aside>
+
+<!-- ─── Add/Edit Property Modal ─── -->
+<div class="form-modal" id="property-form">
+  <div class="form-modal-header">
+    <div class="form-modal-title" id="prop-form-title">Add a Property</div>
+    <button class="form-modal-close" onclick="closeAddProperty()">&times;</button>
+  </div>
+  <div class="form-body">
+    <div class="field">
+      <label>Street Address *</label>
+      <input type="text" id="f-addr" placeholder="2810 Forest Ln">
+    </div>
+    <div class="field">
+      <label>City, State Zip *</label>
+      <input type="text" id="f-city" placeholder="Plano, TX 75093">
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>List Price *</label>
+        <input type="number" id="f-price" placeholder="285000" inputmode="numeric">
+      </div>
+      <div class="field">
+        <label>Est. Rehab *</label>
+        <input type="number" id="f-rehab" placeholder="45000" inputmode="numeric">
+      </div>
+    </div>
+    <div class="field">
+      <label>ARV / Comp Value *</label>
+      <input type="number" id="f-cma" placeholder="475000" inputmode="numeric">
+      <div class="field-hint">Pull from your last 3 sales within 0.5 mi, similar sqft.</div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Beds</label>
+        <input type="number" id="f-beds" placeholder="3" inputmode="numeric">
+      </div>
+      <div class="field">
+        <label>Baths</label>
+        <input type="number" id="f-baths" placeholder="2" step="0.5" inputmode="decimal">
+      </div>
+    </div>
+    <div class="field">
+      <label>Sqft</label>
+      <input type="number" id="f-sqft" placeholder="1840" inputmode="numeric">
+    </div>
+
+    <div class="preview-box" id="preview-box" style="display:none;">
+      <div class="preview-label">Live Deal Preview</div>
+      <div class="preview-row"><span>All-in cost</span><strong id="p-allin">—</strong></div>
+      <div class="preview-row"><span>All-in vs ARV</span><strong id="p-pct">—</strong></div>
+      <div class="preview-row"><span>Tier</span><strong id="p-tier">—</strong></div>
+    </div>
+
+    <div class="field">
+      <label>Notes for Investors</label>
+      <textarea id="f-notes" placeholder="Vacant. Foundation inspected. Seller motivated, quick close preferred."></textarea>
+    </div>
+    <div class="field">
+      <label>Common Question 1 — Question</label>
+      <input type="text" id="f-q1" placeholder="Why is it so cheap?">
+    </div>
+    <div class="field">
+      <label>Common Question 1 — Answer</label>
+      <textarea id="f-a1" placeholder="Estate sale. Heirs out of state, want it gone in 30 days."></textarea>
+    </div>
+    <div class="field">
+      <label>Common Question 2 — Question</label>
+      <input type="text" id="f-q2" placeholder="Title clean?">
+    </div>
+    <div class="field">
+      <label>Common Question 2 — Answer</label>
+      <textarea id="f-a2" placeholder="Yes — verified through our title partner. No liens."></textarea>
+    </div>
+  </div>
+  <div class="form-footer">
+    <button class="btn btn-ghost" onclick="closeAddProperty()">Cancel</button>
+    <button class="btn btn-primary" onclick="saveProperty()" id="save-btn">Publish</button>
+  </div>
+</div>
+
+<!-- ─── Hard Money Contact Form Modal ─── -->
+<div class="form-modal" id="hmc-form">
+  <div class="form-modal-header">
+    <div class="form-modal-title">Hard Money Pre-Qual</div>
+    <button class="form-modal-close" onclick="closeHmcForm()">&times;</button>
+  </div>
+  <div class="form-body">
+    <div class="hmc-info">
+      <strong>Easy Street Capital — Matthew B.</strong>
+      Tap submit and your email app will open with your information pre-filled. Just hit send. Matthew typically responds within 1 business day with pre-qual terms.
+    </div>
+    <div class="field">
+      <label>Your Full Name *</label>
+      <input type="text" id="hmc-name" placeholder="Mike Chen" autocomplete="name">
+    </div>
+    <div class="field">
+      <label>Your Email *</label>
+      <input type="email" id="hmc-email" placeholder="mike@example.com" autocomplete="email">
+    </div>
+    <div class="field">
+      <label>Investor Experience *</label>
+      <select id="hmc-exp">
+        <option value="">Select one...</option>
+        <option value="0 flips — first deal">0 flips — first deal</option>
+        <option value="1–2 flips completed">1–2 flips completed</option>
+        <option value="3–5 flips completed">3–5 flips completed</option>
+        <option value="6–10 flips completed">6–10 flips completed</option>
+        <option value="11+ flips completed">11+ flips completed</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Annual Income (USD) *</label>
+      <select id="hmc-income">
+        <option value="">Select one...</option>
+        <option value="Under $75k">Under $75k</option>
+        <option value="$75k–$150k">$75k–$150k</option>
+        <option value="$150k–$300k">$150k–$300k</option>
+        <option value="$300k–$500k">$300k–$500k</option>
+        <option value="$500k+">$500k+</option>
+      </select>
+    </div>
+    <div class="field-hint" style="margin-top:14px;">
+      By submitting, you authorize Shani's List to share this info with Easy Street Capital for hard money loan pre-qualification. Your data is sent only to Matthew B.
+    </div>
+  </div>
+  <div class="form-footer">
+    <button class="btn btn-ghost" onclick="closeHmcForm()">Cancel</button>
+    <button class="btn btn-primary" onclick="submitHmc()">Send to Lender</button>
+  </div>
+</div>
+
+<!-- ─── Agent login modal ─── -->
+<div class="login-modal" id="login-modal">
+  <div class="login-card">
+    <h2>Agent Login</h2>
+    <p>Enter your passcode to manage properties</p>
+    <input type="password" id="login-input" placeholder="••••••••" autocomplete="off">
+    <div class="login-actions">
+      <button class="btn btn-ghost" onclick="closeLogin()">Cancel</button>
+      <button class="btn btn-primary" onclick="attemptLogin()">Sign In</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── First-visit disclaimer modal ─── -->
+<div class="welcome-modal" id="welcome-modal">
+  <div class="welcome-card">
+    <h2>Welcome to Shani's List</h2>
+    <p>Browse off-market real estate deals shared by your wholesaler. All numbers shown are estimates only — meant to help you screen deals quickly, not to predict your actual outcome.</p>
+    <div class="legal">
+      <strong>Important:</strong> This app is not investment advice. All return estimates are illustrative. Property values, repair costs, and market conditions vary. You are responsible for your own due diligence and for verifying every figure before making any offer.
+    </div>
+    <button onclick="acceptWelcome()">I Understand — Continue</button>
+  </div>
+</div>
+
+<!-- ─── Toast ─── -->
+<div class="toast" id="toast">Saved</div>
+
+<script>
+  // ─── CONFIG (you can change these) ────────────────────────────
+  const AGENT_PASSCODE = 'shani2026';        // Change in code if you want
+  const HMC_EMAIL = 'MatthewB@easystreetcap.com';
+  const HMC_LENDER_NAME = 'Easy Street Capital';
+
+  // ─── Default sample data (used until agent adds real properties) ──
+  const SAMPLE_PROPERTIES = [
+    {
+      id: 1, addr: "2810 Forest Ln", city: "Plano, TX 75093",
+      price: 285000, rehab: 45000, cma: 475000, beds: 3, baths: 2, sqft: 1840,
+      isNew: true, notes: "Vacant. Foundation inspected — minor pier work only. Seller motivated, quick close preferred.",
+      objections: [
+        { q: "Why is it so cheap?", a: "Estate sale. Heirs out of state, want it gone in 30 days." },
+        { q: "Real rehab cost?", a: "Estimated by our preferred contractor — kitchen, baths, paint, flooring." }
+      ]
+    },
+    {
+      id: 2, addr: "1456 Crestview Dr", city: "Frisco, TX 75034",
+      price: 410000, rehab: 65000, cma: 685000, beds: 4, baths: 3, sqft: 2450,
+      isNew: true, notes: "Pre-foreclosure. Owner relocating for work, has 3 weeks.",
+      objections: [
+        { q: "Title clean?", a: "Yes — verified through our title partner. No liens." },
+        { q: "Neighborhood?", a: "Frisco ISD, walk to elementary. Median sale $720K." }
+      ]
+    },
+    {
+      id: 3, addr: "9023 Rolling Hills", city: "McKinney, TX 75070",
+      price: 245000, rehab: 38000, cma: 395000, beds: 3, baths: 2, sqft: 1620,
+      isNew: true, notes: "Inherited property. Tenant on month-to-month — can deliver vacant.",
+      objections: [
+        { q: "Tenant situation?", a: "Currently $1,650/mo. Will deliver vacant or assigned, your choice." }
+      ]
+    }
+  ];
+
+  // ─── State ────────────────────────────────────────────────────
+  let properties = loadProperties();
+  let saved = loadSaved();
+  let activeFilter = 'all';
+  let editingId = null;
+  let pendingHmcDealId = null;
+
+  function loadProperties() {
+    try {
+      const stored = localStorage.getItem('sl-properties');
+      if (stored) return JSON.parse(stored);
+    } catch(e) {}
+    return [...SAMPLE_PROPERTIES];
+  }
+  function saveProperties() {
+    localStorage.setItem('sl-properties', JSON.stringify(properties));
+  }
+  function loadSaved() {
+    try {
+      const s = localStorage.getItem('sl-saved');
+      if (s) return new Set(JSON.parse(s));
+    } catch(e) {}
+    return new Set();
+  }
+  function persistSaved() {
+    localStorage.setItem('sl-saved', JSON.stringify([...saved]));
+  }
+
+  // ─── Helpers ──────────────────────────────────────────────────
+  const fmt = n => '$' + Math.round(n).toLocaleString();
+  function dealTier(pct) {
+    if (pct <= 70) return { label: 'Great Deal', cls: 'badge-great', color: '#1e7a3e' };
+    if (pct <= 80) return { label: 'Good Deal', cls: 'badge-good', color: '#d97706' };
+    return { label: 'Fair Deal', cls: 'badge-fair', color: '#dc2626' };
+  }
+  function calcReturns(p) {
+    const realty = p.cma * 0.04;
+    const cashReturn = p.cma - p.price - p.rehab - realty;
+    const hmCosts = p.price * (0.02 + (0.12/12*5) + 0.03);
+    const hmReturn = p.cma - p.price - p.rehab - realty - hmCosts;
+    return { cashReturn, hmReturn };
+  }
+  function returnCls(v) { return v > 30000 ? '' : v > 0 ? 'tight' : 'negative'; }
+  function returnFmt(v) { return (v >= 0 ? fmt(v) : '-' + fmt(Math.abs(v))); }
+
+  function isAgent() { return sessionStorage.getItem('sl-agent') === '1'; }
+
+  // ─── Render feed ──────────────────────────────────────────────
+  function renderFeed() {
+    const feed = document.getElementById('feed');
+    feed.innerHTML = '';
+
+    const filtered = properties.filter(p => {
+      const pct = (p.price + p.rehab) / p.cma * 100;
+      if (activeFilter === 'all') return true;
+      if (activeFilter === 'saved') return saved.has(p.id);
+      if (activeFilter === 'great') return pct <= 70;
+      if (activeFilter === 'good') return pct > 70 && pct <= 80;
+      return true;
+    });
+
+    // Update counts
+    document.getElementById('count-all').textContent = properties.length;
+    document.getElementById('count-great').textContent = properties.filter(p => (p.price+p.rehab)/p.cma*100 <= 70).length;
+    document.getElementById('count-good').textContent = properties.filter(p => { const pct=(p.price+p.rehab)/p.cma*100; return pct > 70 && pct <= 80; }).length;
+    document.getElementById('count-saved').textContent = saved.size;
+
+    // Update greeting
+    const newCount = properties.filter(p => p.isNew).length;
+    document.getElementById('greeting-sub').textContent =
+      properties.length === 0
+        ? (isAgent() ? 'Tap "Add a Property" to get started' : 'No deals yet — check back soon')
+        : `${properties.length} off-market deal${properties.length === 1 ? '' : 's'} available`;
+
+    if (filtered.length === 0) {
+      feed.innerHTML = `<div style="text-align:center; padding: 60px 20px; color: var(--text-muted); font-size: 14px;">
+        No deals match this filter yet.
+      </div>`;
+      return;
+    }
+
+    filtered.forEach((p, i) => {
+      const allIn = p.price + p.rehab;
+      const pct = (allIn / p.cma) * 100;
+      const tier = dealTier(pct);
+      const { cashReturn, hmReturn } = calcReturns(p);
+      const isSaved = saved.has(p.id);
+
+      const card = document.createElement('article');
+      card.className = 'deal-card';
+      card.style.animationDelay = (i * 50) + 'ms';
+      card.innerHTML = `
+        <div class="card-image">
+          <svg width="56" height="56" viewBox="0 0 48 48" fill="none">
+            <rect x="6" y="20" width="36" height="22" rx="2" fill="#1e7a3e"/>
+            <polygon points="4,22 24,6 44,22" fill="#1e7a3e"/>
+            <rect x="18" y="30" width="12" height="12" rx="1" fill="#e8f3ec"/>
+          </svg>
+          <span class="card-badge ${tier.cls}">${tier.label}</span>
+          <button class="card-save ${isSaved ? 'saved' : ''}" data-id="${p.id}" aria-label="Save">
+            <svg viewBox="0 0 24 24" fill="${isSaved ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+            </svg>
+          </button>
+          <div class="agent-controls">
+            <button class="agent-control-btn" data-action="edit" data-id="${p.id}" aria-label="Edit">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </button>
+            <button class="agent-control-btn delete" data-action="delete" data-id="${p.id}" aria-label="Delete">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="card-row-1">
+            <div class="card-addr">${p.addr}</div>
+            <div class="card-price">${fmt(p.price)}</div>
+          </div>
+          <div class="card-city">${p.city}${p.beds ? ` · ${p.beds} bd · ${p.baths} ba${p.sqft ? ` · ${(+p.sqft).toLocaleString()} sqft` : ''}` : ''}</div>
+
+          <div class="deal-bar">
+            <div class="deal-bar-top">
+              <span>All-in vs ARV</span>
+              <span class="deal-bar-pct" style="color:${tier.color}">${pct.toFixed(1)}%</span>
+            </div>
+            <div class="deal-bar-track">
+              <div class="deal-bar-fill" style="width:${Math.min(pct,100)}%; background:${tier.color};"></div>
+              <div class="deal-70"></div>
+            </div>
+          </div>
+
+          <div class="return-block">
+            <div class="return-disclaimer">Estimated Return Only · Not Investment Advice</div>
+            <div class="return-grid">
+              <div class="return-item">
+                <div class="return-label">Cash purchase est.</div>
+                <div class="return-value ${returnCls(cashReturn)}">${returnFmt(cashReturn)}</div>
+              </div>
+              <div class="return-item">
+                <div class="return-label">Hard money est.</div>
+                <div class="return-value ${returnCls(hmReturn)}">${returnFmt(hmReturn)}</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card-actions">
+            <button class="btn btn-primary" data-action="details" data-id="${p.id}">View Details</button>
+            <button class="btn btn-icon" data-action="map" data-id="${p.id}" aria-label="Map">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            </button>
+            <button class="btn btn-icon" data-action="call" data-id="${p.id}" aria-label="Call">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+            </button>
+          </div>
+        </div>
+      `;
+      feed.appendChild(card);
+    });
+
+    bindCardEvents();
+  }
+
+  function bindCardEvents() {
+    document.querySelectorAll('.card-save').forEach(btn => {
+      btn.addEventListener('click', e => {
+        e.stopPropagation();
+        const id = +btn.dataset.id;
+        if (saved.has(id)) {
+          saved.delete(id);
+          btn.classList.remove('saved');
+          btn.querySelector('svg').setAttribute('fill', 'none');
+          showToast('Removed from saved');
+        } else {
+          saved.add(id);
+          btn.classList.add('saved');
+          btn.querySelector('svg').setAttribute('fill', 'currentColor');
+          showToast('Saved');
+        }
+        persistSaved();
+        document.getElementById('count-saved').textContent = saved.size;
+      });
+    });
+
+    document.querySelectorAll('[data-action="details"]').forEach(btn => {
+      btn.addEventListener('click', e => {
+        e.stopPropagation();
+        openSheet(+btn.dataset.id);
+      });
+    });
+    document.querySelectorAll('[data-action="map"]').forEach(btn => {
+      btn.addEventListener('click', e => {
+        e.stopPropagation();
+        const p = properties.find(x => x.id === +btn.dataset.id);
+        window.open(`https://maps.google.com/?q=${encodeURIComponent(p.addr+', '+p.city)}`, '_blank');
+      });
+    });
+    document.querySelectorAll('[data-action="call"]').forEach(btn => {
+      btn.addEventListener('click', e => {
+        e.stopPropagation();
+        showToast('Calling Shani · 555-0142');
+      });
+    });
+    document.querySelectorAll('[data-action="edit"]').forEach(btn => {
+      btn.addEventListener('click', e => {
+        e.stopPropagation();
+        openEditProperty(+btn.dataset.id);
+      });
+    });
+    document.querySelectorAll('[data-action="delete"]').forEach(btn => {
+      btn.addEventListener('click', e => {
+        e.stopPropagation();
+        const id = +btn.dataset.id;
+        const p = properties.find(x => x.id === id);
+        if (confirm(`Delete ${p.addr}? This can't be undone.`)) {
+          properties = properties.filter(x => x.id !== id);
+          saveProperties();
+          renderFeed();
+          showToast('Property deleted');
+        }
+      });
+    });
+  }
+
+  // ─── Detail sheet ─────────────────────────────────────────────
+  function openSheet(id) {
+    const p = properties.find(x => x.id === id);
+    if (!p) return;
+    pendingHmcDealId = id;
+    const allIn = p.price + p.rehab;
+    const pct = (allIn / p.cma) * 100;
+    const tier = dealTier(pct);
+    const { cashReturn, hmReturn } = calcReturns(p);
+    const cashColor = cashReturn > 30000 ? 'var(--green)' : cashReturn > 0 ? 'var(--amber)' : 'var(--red)';
+    const hmColor = hmReturn > 30000 ? 'var(--green)' : hmReturn > 0 ? 'var(--amber)' : 'var(--red)';
+
+    document.getElementById('sheet-content').innerHTML = `
+      <div class="sheet-header">
+        <div class="sheet-title">${p.addr}</div>
+        <div class="sheet-sub">${p.city}${p.beds ? ` · ${p.beds} bd · ${p.baths} ba${p.sqft ? ` · ${(+p.sqft).toLocaleString()} sqft` : ''}` : ''}</div>
+      </div>
+
+      <div class="sheet-section">
+        <div class="sheet-section-title">The Numbers</div>
+        <div class="num-row"><span class="label">List price</span><span class="val big">${fmt(p.price)}</span></div>
+        <div class="num-row"><span class="label">Estimated rehab</span><span class="val">${fmt(p.rehab)}</span></div>
+        <div class="num-row"><span class="label">All-in cost</span><span class="val">${fmt(allIn)}</span></div>
+        <div class="num-row"><span class="label">After-repair value</span><span class="val">${fmt(p.cma)}</span></div>
+        <div class="num-row"><span class="label">All-in vs ARV</span><span class="val" style="color:${tier.color}">${pct.toFixed(1)}% · ${tier.label}</span></div>
+      </div>
+
+      <div class="sheet-section">
+        <div class="sheet-section-title">⚠ Estimated Return Only · Not Investment Advice</div>
+        <div class="num-row"><span class="label">Cash purchase est.</span><span class="val" style="color:${cashColor}">${returnFmt(cashReturn - 15000)} – ${returnFmt(cashReturn + 15000)}</span></div>
+        <div class="num-row"><span class="label">Hard money est. (5mo)</span><span class="val" style="color:${hmColor}">${returnFmt(hmReturn - 15000)} – ${returnFmt(hmReturn + 15000)}</span></div>
+      </div>
+
+      ${p.notes ? `
+      <div class="sheet-section">
+        <div class="sheet-section-title">Wholesaler Notes</div>
+        <p style="font-size:14px; line-height:1.6; color:var(--text);">${p.notes}</p>
+      </div>` : ''}
+
+      ${p.objections && p.objections.length > 0 ? `
+      <div class="sheet-section">
+        <div class="sheet-section-title">Common Questions</div>
+        ${p.objections.map(o => `
+          <div class="objection">
+            <div class="objection-q">${o.q}</div>
+            <div class="objection-a">${o.a}</div>
+          </div>
+        `).join('')}
+      </div>` : ''}
+
+      <div class="full-disclaimer">
+        <strong>Important Disclaimer</strong>
+        All figures including ARV, rehab estimates, and projected returns are illustrative only. They are not guarantees, investment advice, or predictions of actual outcomes. Property values, repair costs, holding costs, and market conditions vary. You are responsible for independent verification and your own due diligence before making any offer.
+      </div>
+
+      <button class="hmc-btn" onclick="openHmcForm(${p.id})">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        Get Hard Money Pre-Qual
+      </button>
+
+      <div class="sheet-cta">
+        <button class="btn btn-secondary" onclick="window.open('https://maps.google.com/?q=${encodeURIComponent(p.addr+', '+p.city)}','_blank')">
+          📍 Drive there
+        </button>
+        <button class="btn btn-primary" onclick="showToast('Calling Shani · 555-0142'); closeSheet();">
+          Contact Shani
+        </button>
+      </div>
+    `;
+
+    document.getElementById('sheet-overlay').classList.add('open');
+    document.getElementById('sheet').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeSheet() {
+    document.getElementById('sheet-overlay').classList.remove('open');
+    document.getElementById('sheet').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  // ─── Hard money form ──────────────────────────────────────────
+  function openHmcForm(dealId) {
+    pendingHmcDealId = dealId;
+    document.getElementById('hmc-form').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeHmcForm() {
+    document.getElementById('hmc-form').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+  function submitHmc() {
+    const name = document.getElementById('hmc-name').value.trim();
+    const email = document.getElementById('hmc-email').value.trim();
+    const exp = document.getElementById('hmc-exp').value;
+    const income = document.getElementById('hmc-income').value;
+
+    if (!name || !email || !exp || !income) {
+      showToast('Please fill all required fields');
+      return;
+    }
+    if (!email.includes('@')) {
+      showToast('Please enter a valid email');
+      return;
+    }
+
+    const deal = properties.find(p => p.id === pendingHmcDealId);
+    const dealLine = deal ? `${deal.addr}, ${deal.city} (List: ${fmt(deal.price)}, Rehab: ${fmt(deal.rehab)}, ARV: ${fmt(deal.cma)})` : 'Not specified';
+
+    const subject = `Hard Money Pre-Qual Request — ${name}${deal ? ' — ' + deal.addr : ''}`;
+    const body = `Hi Matthew,
+
+I'd like to be pre-qualified for a hard money loan through Easy Street Capital. Here is my information:
+
+Name: ${name}
+Email: ${email}
+Investor Experience: ${exp}
+Annual Income: ${income}
+
+Property of interest: ${dealLine}
+
+Please let me know what additional information you need to issue pre-qual terms.
+
+Thank you,
+${name}
+
+—
+Sent via Shani's List`;
+
+    const mailto = `mailto:${HMC_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    window.location.href = mailto;
+
+    setTimeout(() => {
+      closeHmcForm();
+      closeSheet();
+      showToast('Email opened — just hit send');
+    }, 500);
+  }
+
+  // ─── Add/Edit property ────────────────────────────────────────
+  function openAddProperty() {
+    if (!isAgent()) { openLogin(); return; }
+    editingId = null;
+    document.getElementById('prop-form-title').textContent = 'Add a Property';
+    document.getElementById('save-btn').textContent = 'Publish';
+    ['f-addr','f-city','f-price','f-rehab','f-cma','f-beds','f-baths','f-sqft','f-notes','f-q1','f-a1','f-q2','f-a2'].forEach(id => {
+      document.getElementById(id).value = '';
+    });
+    document.getElementById('preview-box').style.display = 'none';
+    document.getElementById('property-form').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function openEditProperty(id) {
+    const p = properties.find(x => x.id === id);
+    if (!p) return;
+    editingId = id;
+    document.getElementById('prop-form-title').textContent = 'Edit Property';
+    document.getElementById('save-btn').textContent = 'Save Changes';
+    document.getElementById('f-addr').value = p.addr || '';
+    document.getElementById('f-city').value = p.city || '';
+    document.getElementById('f-price').value = p.price || '';
+    document.getElementById('f-rehab').value = p.rehab || '';
+    document.getElementById('f-cma').value = p.cma || '';
+    document.getElementById('f-beds').value = p.beds || '';
+    document.getElementById('f-baths').value = p.baths || '';
+    document.getElementById('f-sqft').value = p.sqft || '';
+    document.getElementById('f-notes').value = p.notes || '';
+    document.getElementById('f-q1').value = p.objections?.[0]?.q || '';
+    document.getElementById('f-a1').value = p.objections?.[0]?.a || '';
+    document.getElementById('f-q2').value = p.objections?.[1]?.q || '';
+    document.getElementById('f-a2').value = p.objections?.[1]?.a || '';
+    updatePreview();
+    document.getElementById('property-form').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeAddProperty() {
+    document.getElementById('property-form').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  function updatePreview() {
+    const price = +document.getElementById('f-price').value || 0;
+    const rehab = +document.getElementById('f-rehab').value || 0;
+    const cma = +document.getElementById('f-cma').value || 0;
+    const box = document.getElementById('preview-box');
+    if (!price || !cma) { box.style.display = 'none'; return; }
+    box.style.display = 'block';
+    const allIn = price + rehab;
+    const pct = (allIn / cma) * 100;
+    const tier = dealTier(pct);
+    document.getElementById('p-allin').textContent = fmt(allIn);
+    document.getElementById('p-pct').textContent = pct.toFixed(1) + '%';
+    document.getElementById('p-tier').innerHTML = `<span class="card-badge ${tier.cls}" style="position:static; padding:3px 9px;">${tier.label}</span>`;
+  }
+
+  ['f-price','f-rehab','f-cma'].forEach(id => {
+    document.getElementById(id).addEventListener('input', updatePreview);
+  });
+
+  function saveProperty() {
+    const addr = document.getElementById('f-addr').value.trim();
+    const city = document.getElementById('f-city').value.trim();
+    const price = +document.getElementById('f-price').value;
+    const rehab = +document.getElementById('f-rehab').value;
+    const cma = +document.getElementById('f-cma').value;
+
+    if (!addr || !city || !price || !rehab || !cma) {
+      showToast('Please fill all required fields');
+      return;
+    }
+
+    const objections = [];
+    const q1 = document.getElementById('f-q1').value.trim();
+    const a1 = document.getElementById('f-a1').value.trim();
+    const q2 = document.getElementById('f-q2').value.trim();
+    const a2 = document.getElementById('f-a2').value.trim();
+    if (q1 && a1) objections.push({ q: q1, a: a1 });
+    if (q2 && a2) objections.push({ q: q2, a: a2 });
+
+    const data = {
+      addr, city, price, rehab, cma,
+      beds: +document.getElementById('f-beds').value || null,
+      baths: +document.getElementById('f-baths').value || null,
+      sqft: +document.getElementById('f-sqft').value || null,
+      notes: document.getElementById('f-notes').value.trim(),
+      objections,
+      isNew: true
+    };
+
+    if (editingId !== null) {
+      const idx = properties.findIndex(p => p.id === editingId);
+      if (idx >= 0) {
+        properties[idx] = { ...properties[idx], ...data };
+        showToast('Property updated');
+      }
+    } else {
+      data.id = Date.now();
+      properties.unshift(data);
+      showToast('Property published');
+    }
+
+    saveProperties();
+    closeAddProperty();
+    renderFeed();
+  }
+
+  // ─── Filters ──────────────────────────────────────────────────
+  function setFilter(name) {
+    activeFilter = name;
+    document.querySelectorAll('.pill').forEach(p => {
+      p.classList.toggle('active', p.dataset.filter === name);
+    });
+    renderFeed();
+  }
+  document.querySelectorAll('.pill').forEach(pill => {
+    pill.addEventListener('click', () => setFilter(pill.dataset.filter));
+  });
+
+  // ─── Agent login ──────────────────────────────────────────────
+  function toggleAgentMode() {
+    if (isAgent()) {
+      sessionStorage.removeItem('sl-agent');
+      document.body.classList.remove('agent-mode');
+      document.getElementById('agent-login-btn').textContent = 'Agent Login';
+      showToast('Signed out of agent mode');
+      renderFeed();
+    } else {
+      openLogin();
+    }
+  }
+  function openLogin() {
+    document.getElementById('login-modal').classList.add('open');
+    setTimeout(() => document.getElementById('login-input').focus(), 200);
+  }
+  function closeLogin() {
+    document.getElementById('login-modal').classList.remove('open');
+    document.getElementById('login-input').value = '';
+  }
+  function attemptLogin() {
+    const val = document.getElementById('login-input').value;
+    if (val === AGENT_PASSCODE) {
+      sessionStorage.setItem('sl-agent', '1');
+      document.body.classList.add('agent-mode');
+      document.getElementById('agent-login-btn').textContent = 'Sign Out';
+      closeLogin();
+      showToast('Welcome back, Shani');
+      renderFeed();
+    } else {
+      showToast('Incorrect passcode');
+      document.getElementById('login-input').value = '';
+    }
+  }
+  document.getElementById('login-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') attemptLogin();
+  });
+
+  // Apply agent mode on load if session active
+  if (isAgent()) {
+    document.body.classList.add('agent-mode');
+    document.getElementById('agent-login-btn').textContent = 'Sign Out';
+  }
+
+  // ─── First-visit welcome ──────────────────────────────────────
+  function acceptWelcome() {
+    localStorage.setItem('sl-welcomed', '1');
+    document.getElementById('welcome-modal').classList.remove('open');
+  }
+  if (!localStorage.getItem('sl-welcomed') && !isAgent()) {
+    setTimeout(() => document.getElementById('welcome-modal').classList.add('open'), 400);
+  }
+
+  // ─── Toast ────────────────────────────────────────────────────
+  let toastTimer;
+  function showToast(msg) {
+    clearTimeout(toastTimer);
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    toastTimer = setTimeout(() => t.classList.remove('show'), 2400);
+  }
+
+  // ─── Service worker ───────────────────────────────────────────
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    });
+  }
+
+  // ─── Init ─────────────────────────────────────────────────────
+  renderFeed();
+</script>
+</body>
+</html>
